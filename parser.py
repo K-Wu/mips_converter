@@ -42,7 +42,7 @@ R_INSTRUCTIONS = {
     "or": [0x25, 1, 2, 0, -1],
     "nor": [0x27, 1, 2, 0, -1],
     "and": [0x20, 1, 2, 0, -1],
-    "addu": [0x20, 1, 2, 0, -1],
+    "addu": [0x20, 1, 2, 0, -1],#注意addu指令格式是 add $d,$s,$t，不带立即数
     "add": [0x20, 1, 2, 0, -1],
     "sltu": [0x2b, 1, 2, 0, -1],
 }
@@ -70,10 +70,13 @@ I_INSTRUCTIONS = {
 # 读存指令的OPCODE，各参数的位置是固定的
 SL_INSTRUCTIONS = {
     # OPCODE
-    # rs,rt,imm should be -1,0,1
-    "lui": 0xf,
-    "lw": 0x23,
-    "sw": 0x2b
+
+    "lui": 0xf,# rs,rt,imm should be -1,0,1
+    "lw": 0x23,## 特殊的表示方式
+    "sw": 0x2b ## 特殊的寄存器、立即数表示方式
+}
+SL_REGISTER_INSTRUCTIONS ={
+    "sw","lw"#会出现4($sp)这种操作的指令集合
 }
 # J指令的OPCODE，后26位为地址偏移
 J_INSTRUCTIONS = {
@@ -118,8 +121,13 @@ def get_instruction_type(instruction):
         assert immediate_string == "relocate", "J instruction should have relocate"
         return 1, [(0, "relocate", IMM_OFFSET)], (J_INSTRUCTIONS[instruction], OPCODE_OFFSET), "J"
     elif instruction in SL_INSTRUCTIONS:
-        return 2, [(0, "register", RT_OFFSET), (1, immediate_string, IMM_OFFSET)], (
-        SL_INSTRUCTIONS[instruction], OPCODE_OFFSET), "SL"
+        if instruction in SL_REGISTER_INSTRUCTIONS:
+            ##没有考虑到sw,lw中4($sp)这样的操作
+            return 2, [(0, "register", RT_OFFSET), (1, "SL_register", (RS_OFFSET,IMM_OFFSET))], (
+            SL_INSTRUCTIONS[instruction], OPCODE_OFFSET), "SL"
+        else:
+            return 2, [(0, "register", RT_OFFSET), (1, "register", IMM_OFFSET)], (
+                SL_INSTRUCTIONS[instruction], OPCODE_OFFSET), "SL"
     elif instruction in I_INSTRUCTIONS:
         param_offsets_pair = [(I_INSTRUCTIONS[instruction][i], I_TYPES[i], I_OFFSETS[i]) for i in
                               range(1, len(I_OFFSETS)-1) if I_INSTRUCTIONS[instruction][i] != -1]#先加上两个寄存器
@@ -133,6 +141,20 @@ def get_instruction_type(instruction):
         return param_number, param_offsets_pair, (R_INSTRUCTIONS[instruction][0], FUNC_OFFSET), "R"
     raise ValueError, "instruction " + instruction + " is unknown and cannot give param,constant information correctly"
 
+def decode_sl_register(reg_str):
+    """
+    专门用来解析SL指令的第二个寄存器，通常为4($sp)种种。
+    返回的第一个值为寄存器编号，第二个值为立即数
+    :param reg_str: str
+    :return: int, int
+    """
+    #有三种可能：只有立即数（没有括号），只有寄存器（有括号），又有立即数又有寄存器（有括号）。虽然第一种只在MARS中看到过
+    left_par_pos=reg_str.find("(")
+    if left_par_pos==-1:
+        return 0, int(reg_str)
+    if left_par_pos==0:
+        return decode_register(reg_str),0
+    return decode_register(reg_str[left_par_pos+1:-1]),int(reg_str[0:left_par_pos])
 
 def decode_register(reg_str):
     """
@@ -222,7 +244,6 @@ def convert_assembly(clean_code):
         machine_code = constant << constant_offset
         for param, param_type, param_offset in param_types_offsets:
             if param_type == "immediate" or param_type == "shamt":  ##写成param_type=="immediate" or "shamt"是不行的
-                ##没有考虑到4($sp)这样的操作
                 num_specified = int(clean_code[i + param + 1])
                 ##第一次写漏写了立即数取反
 
@@ -235,6 +256,10 @@ def convert_assembly(clean_code):
                 machine_code += num_specified << param_offset
             elif param_type == "register":
                 machine_code += decode_register(clean_code[i + param + 1]) << param_offset
+            elif param_type == "SL_register":
+                reg_no, imm = decode_sl_register(clean_code[i+param+1])
+                machine_code+=reg_no<<param_offset[0]
+                machine_code+=imm<<param_offset[1]
             elif param_type == "relocate":
                 converted_instruction[address]["relocate"] = clean_code[i + param + 1]
                 text_address_relocate.append(address)
@@ -284,7 +309,7 @@ if __name__ == "__main__":
     #     for filename in folder_name[2]:
     #         clean_code=read_clean_code("test/"+filename)
     #         pass
-    clean_code = read_clean_code("test2.asm")
+    clean_code = read_clean_code("8queen.asm")
     converted_instruction = convert_assembly(clean_code)
     nice_print_string = nice_print(converted_instruction)
     pass

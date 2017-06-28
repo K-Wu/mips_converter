@@ -19,12 +19,13 @@ lw $a0, 0($sp)    #读取$a0
 lw $ra, 4($sp)    #读取$ra
 addi $sp, $sp 8   #退栈
 add $v0, $a0, $v0 #$v0+=$a0
+jr $ra            #跳转回$ra指向地址
 
-#	address 	code
+#	    address 	  output     reference
 #0addi	0x00000000	0x20040003
 #1jal	0x00000004	0x0c100003
-#2beq	(Loop) 0x00000008	0x1000ffff
-#3addi	(sum) 0x0000000c	0x23bdfff8
+#2beq	0x00000008	0x1000ffff   (Loop)
+#3addi	0x0000000c	0x23bdfff8   (sum)
 #4sw	0x00000010	0xafbf0004
 #5sw	0x00000014	0xafa40000
 #6slti	0x00000018	0x28880001
@@ -32,8 +33,8 @@ add $v0, $a0, $v0 #$v0+=$a0
 #8xor	0x00000020	0x00001026
 #9addi	0x00000024	0x23bd0008
 #10jr	0x00000028	0x03e00008
-#11addi	(L1)0x0000002c	0x2084ffff
-#12jal	0x00000030	0x0c100003
+#11addi	0x0000002c	0x2084ffff    (L1)
+#12jal	0x00000030	0x0c000003
 #13lw	0x00000034	0x8fa40000
 #14lw	0x00000038	0x8fbf0004
 #15addi	0x0000003c	0x23bd0008

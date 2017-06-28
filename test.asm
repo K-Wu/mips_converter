@@ -10,7 +10,7 @@ addi $t2, $zero, -12345
 slt $v0, $a0, $t2 
 sltu $v1, $a0, $t2 
 Loop: j Loop
-
+                          output    reference
 #address: 00000000,code: 20043039
 #address: 00000004,code: 2404D431 xx 2405d431 1.取反时没有取绝对值
 #address: 00000008,code: 00053400
