@@ -27,6 +27,10 @@ RELOCATION = {
 # R指令的func code，各参数的位置和偏移量
 # TODO:检查立即数位数，是不是R,存取指令,B16位，J26位，
 R_OFFSETS = [FUNC_OFFSET, RS_OFFSET, RT_OFFSET, RD_OFFSET, SHAMT_OFFSET]
+FUNC_NUMBITS=6
+REG_NUMBITS=5
+SHAMT_NUMBITS=5
+R_NUMBITS = [FUNC_NUMBITS,REG_NUMBITS,REG_NUMBITS,REG_NUMBITS,SHAMT_NUMBITS]#for translator
 R_TYPES = ["should not appear", "register", "register", "register", "shamt"]
 R_INSTRUCTIONS = {
     # funccode,rs position(in parameters),rt position,rd position, shamt position
@@ -50,7 +54,10 @@ R_INSTRUCTIONS = {
 # I指令的OPCODE
 ##各参数在指令后的位置并不是固定的，b系列的rs和rt与一般指令的位置正好相反）
 #依样画葫芦
+IMM_NUMBITS=16
+OPCODE_NUMBITS=6
 I_OFFSETS = [OPCODE_OFFSET, RS_OFFSET, RT_OFFSET, IMM_OFFSET]
+I_NUMBITS = [OPCODE_NUMBITS,REG_NUMBITS,REG_NUMBITS,IMM_NUMBITS]
 I_TYPES = ["should not appear", "register", "register", "immediate"]
 I_INSTRUCTIONS = {
     # OPCODE.
