@@ -7,7 +7,7 @@ import converter
 
 # OPCODE_OFFSET=26
 # FUNCT_NUMBITS=6
-ROM_FILENAME = "rom.v"
+ROM_FILENAME = "rom_ori.v"
 R_INSTRUCTION_FUNCT = {val[0]: instr for instr, val in converter.R_INSTRUCTIONS.items()}  # 格式9:"jalr"
 
 REGISTER_NAME = {i: register_name for i, register_name in enumerate(converter.REGISTER_NAME)}
@@ -82,13 +82,20 @@ def translate_single_line(machine_code, address_ind):
         instr = J_INSTRUCTION_OPCODE[opcode]
         param_code = machine_code % (1 << 26)
         address = param_code << 2
-        line = instr + " {:08X}".format(param_code)
+        line = instr + " 0x{:08X}".format(param_code)
     elif opcode in SL_INSTRUCTION_OPCODE:
         instr = SL_INSTRUCTION_OPCODE[opcode]
         # rt,offset 只显示offset
         rt_id = machine_code / (1 << converter.RT_OFFSET) % (1 << converter.REG_NUMBITS)
-        offset = machine_code / (1 << converter.IMM_OFFSET)
-        line = instr + " " + get_register_name(rt_id) + " " + "{:04X}".format(offset)
+        is_SLW=False
+        rs_id=-1
+        if SL_INSTRUCTION_OPCODE[opcode] in {"sw","lw"}:
+            is_SLW=True
+            rs_id=machine_code / (1 << converter.RS_OFFSET) % (1 << converter.REG_NUMBITS)
+        offset = machine_code % (1 << converter.IMM_NUMBITS)
+        line = instr + " " + get_register_name(rt_id) + " " + "0x{:04X}".format(offset)
+        if is_SLW:
+            line+="(${})".format(rs_id)
     else:
         line = "<unknown instruction>"
     return line
@@ -104,5 +111,12 @@ def translate(machine_codes):
 
 if __name__ == "__main__":
     machine_codes = load_machine_code(ROM_FILENAME)
+    b=translate(["02748822"])
+    #a=translate(["2748825"])
     mips_assembly_lines = translate(machine_codes)
+    ROM_OUT_FILENAME = "rom_ori.out"
+    with open(ROM_OUT_FILENAME, 'w') as fd:
+        for line in mips_assembly_lines:
+            fd.write(line)
+            fd.write("\n")
     pass

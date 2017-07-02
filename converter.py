@@ -27,10 +27,10 @@ RELOCATION = {
 # R指令的func code，各参数的位置和偏移量
 # TODO:检查立即数位数，是不是R,存取指令,B16位，J26位，
 R_OFFSETS = [FUNC_OFFSET, RS_OFFSET, RT_OFFSET, RD_OFFSET, SHAMT_OFFSET]
-FUNC_NUMBITS=6
-REG_NUMBITS=5
-SHAMT_NUMBITS=5
-R_NUMBITS = [FUNC_NUMBITS,REG_NUMBITS,REG_NUMBITS,REG_NUMBITS,SHAMT_NUMBITS]#for translator
+FUNC_NUMBITS = 6
+REG_NUMBITS = 5
+SHAMT_NUMBITS = 5
+R_NUMBITS = [FUNC_NUMBITS, REG_NUMBITS, REG_NUMBITS, REG_NUMBITS, SHAMT_NUMBITS]  # for translator
 R_TYPES = ["should not appear", "register", "register", "register", "shamt"]
 R_INSTRUCTIONS = {
     # funccode,rs position(in parameters),rt position,rd position, shamt position
@@ -46,44 +46,44 @@ R_INSTRUCTIONS = {
     "or": [0x25, 1, 2, 0, -1],
     "nor": [0x27, 1, 2, 0, -1],
     "and": [0x20, 1, 2, 0, -1],
-    "addu": [0x20, 1, 2, 0, -1],#注意addu指令格式是 add $d,$s,$t，不带立即数
+    "addu": [0x20, 1, 2, 0, -1],  # 注意addu指令格式是 add $d,$s,$t，不带立即数
     "add": [0x20, 1, 2, 0, -1],
     "sltu": [0x2b, 1, 2, 0, -1],
 }
 
 # I指令的OPCODE
 ##各参数在指令后的位置并不是固定的，b系列的rs和rt与一般指令的位置正好相反）
-#依样画葫芦
-IMM_NUMBITS=16
-OPCODE_NUMBITS=6
+# 依样画葫芦
+IMM_NUMBITS = 16
+OPCODE_NUMBITS = 6
 I_OFFSETS = [OPCODE_OFFSET, RS_OFFSET, RT_OFFSET, IMM_OFFSET]
-I_NUMBITS = [OPCODE_NUMBITS,REG_NUMBITS,REG_NUMBITS,IMM_NUMBITS]
+I_NUMBITS = [OPCODE_NUMBITS, REG_NUMBITS, REG_NUMBITS, IMM_NUMBITS]
 I_TYPES = ["should not appear", "register", "register", "immediate"]
 I_INSTRUCTIONS = {
     # OPCODE.
     ## rs position,rt position,imm position
-    "addi": [8,1,0,2],
-    "addiu": [9,1,0,2],
-    "andi": [0xc,1,0,2],
-    "slti": [0xa,1,0,2],
-    "sltiu": [0xb,1,0,2],
-    "beq": [4,0,1,2],  #
-    "bgtz": [7,0,1,2],  #
-    "blez": [6,0,1,2],  #
-    "bltz": [1,0,1,2],  #
-    "bne": [5,0,1,2]  #
+    "addi": [8, 1, 0, 2],
+    "addiu": [9, 1, 0, 2],
+    "andi": [0xc, 1, 0, 2],
+    "slti": [0xa, 1, 0, 2],
+    "sltiu": [0xb, 1, 0, 2],
+    "beq": [4, 0, 1, 2],  #
+    "bgtz": [7, 0, 1, 2],  #
+    "blez": [6, 0, 1, 2],  #
+    "bltz": [1, 0, 1, 2],  #
+    "bne": [5, 0, 1, 2]  #
 }
 # TODO:注意不同指令地址指定，有的是2开始，有的是0开始，把这个放在哪里实现？
 # 读存指令的OPCODE，各参数的位置是固定的
 SL_INSTRUCTIONS = {
     # OPCODE
 
-    "lui": 0xf,# rs,rt,imm should be -1,0,1
-    "lw": 0x23,## 特殊的表示方式
-    "sw": 0x2b ## 特殊的寄存器、立即数表示方式
+    "lui": 0xf,  # rs,rt,imm should be -1,0,1
+    "lw": 0x23,  ## 特殊的表示方式
+    "sw": 0x2b  ## 特殊的寄存器、立即数表示方式
 }
-SL_REGISTER_INSTRUCTIONS ={
-    "sw","lw"#会出现4($sp)这种操作的指令集合
+SL_REGISTER_INSTRUCTIONS = {
+    "sw", "lw"  # 会出现4($sp)这种操作的指令集合
 }
 # J指令的OPCODE，后26位为地址偏移
 J_INSTRUCTIONS = {
@@ -130,15 +130,15 @@ def get_instruction_type(instruction):
     elif instruction in SL_INSTRUCTIONS:
         if instruction in SL_REGISTER_INSTRUCTIONS:
             ##没有考虑到sw,lw中4($sp)这样的操作
-            return 2, [(0, "register", RT_OFFSET), (1, "SL_register", (RS_OFFSET,IMM_OFFSET))], (
-            SL_INSTRUCTIONS[instruction], OPCODE_OFFSET), "SL"
+            return 2, [(0, "register", RT_OFFSET), (1, "SL_register", (RS_OFFSET, IMM_OFFSET))], (
+                SL_INSTRUCTIONS[instruction], OPCODE_OFFSET), "SL"
         else:
-            return 2, [(0, "register", RT_OFFSET), (1, "register", IMM_OFFSET)], (
+            return 2, [(0, "register", RT_OFFSET), (1, "immediate", IMM_OFFSET)], (
                 SL_INSTRUCTIONS[instruction], OPCODE_OFFSET), "SL"
     elif instruction in I_INSTRUCTIONS:
         param_offsets_pair = [(I_INSTRUCTIONS[instruction][i], I_TYPES[i], I_OFFSETS[i]) for i in
-                              range(1, len(I_OFFSETS)-1) if I_INSTRUCTIONS[instruction][i] != -1]#先加上两个寄存器
-        param_offsets_pair.append((2, immediate_string, IMM_OFFSET))#再加上立即数
+                              range(1, len(I_OFFSETS) - 1) if I_INSTRUCTIONS[instruction][i] != -1]  # 先加上两个寄存器
+        param_offsets_pair.append((2, immediate_string, IMM_OFFSET))  # 再加上立即数
         return 3, param_offsets_pair, (I_INSTRUCTIONS[instruction][0], OPCODE_OFFSET), "I"
 
     elif instruction in R_INSTRUCTIONS:
@@ -148,6 +148,7 @@ def get_instruction_type(instruction):
         return param_number, param_offsets_pair, (R_INSTRUCTIONS[instruction][0], FUNC_OFFSET), "R"
     raise ValueError, "instruction " + instruction + " is unknown and cannot give param,constant information correctly"
 
+
 def decode_sl_register(reg_str):
     """
     专门用来解析SL指令的第二个寄存器，通常为4($sp)种种。
@@ -155,13 +156,14 @@ def decode_sl_register(reg_str):
     :param reg_str: str
     :return: int, int
     """
-    #有三种可能：只有立即数（没有括号），只有寄存器（有括号），又有立即数又有寄存器（有括号）。虽然第一种只在MARS中看到过
-    left_par_pos=reg_str.find("(")
-    if left_par_pos==-1:
-        return 0, int(reg_str)
-    if left_par_pos==0:
-        return decode_register(reg_str),0
-    return decode_register(reg_str[left_par_pos+1:-1]),int(reg_str[0:left_par_pos])
+    # 有三种可能：只有立即数（没有括号），只有寄存器（有括号），又有立即数又有寄存器（有括号）。虽然第一种只在MARS中看到过
+    left_par_pos = reg_str.find("(")
+    if left_par_pos == -1:
+        return 0, int(reg_str,16)
+    if left_par_pos == 0:
+        return decode_register(reg_str), 0
+    return decode_register(reg_str[left_par_pos + 1:-1]), int(reg_str[0:left_par_pos],16)
+
 
 def decode_register(reg_str):
     """
@@ -215,16 +217,18 @@ def get_negint_represent(number, num_bits):
     """
     if number >= 0:  # 不对非负进行操作
         return number
-    return ~(-number) % (1 << num_bits) + 1##漏掉了负号，应该先得到绝对值，再来一波bit manipulation
-                                            ##refactor的时候漏掉了+1
+    return ~(-number) % (1 << num_bits) + 1  ##漏掉了负号，应该先得到绝对值，再来一波bit manipulation
+    ##refactor的时候漏掉了+1
 
 
 TEXT_ADDRESS_START_POSITION = 0x00000000
 
-def convert_assembly(clean_code):
+
+def convert_assembly(clean_code,reverse=False):
     """
     将clean_code转换为机器码，组织格式为
     {address:{"machine code":machine_code,("relocation":relocation,etc.)}}
+    当reverse为True时，j和beq不再使用label，而是将其本应作标签的参数当作立即数进行相应跳转
     :return: dict
     """
 
@@ -251,22 +255,23 @@ def convert_assembly(clean_code):
         machine_code = constant << constant_offset
         for param, param_type, param_offset in param_types_offsets:
             if param_type == "immediate" or param_type == "shamt":  ##写成param_type=="immediate" or "shamt"是不行的
-                num_specified = int(clean_code[i + param + 1])
+                num_specified = int(clean_code[i + param + 1],16) #默认16位
                 ##第一次写漏写了立即数取反
 
                 if num_specified < 0:
                     assert param_type == "immediate", "should not have negative number as shamt"  # 只可能负数出现在imm，而不是shamt
-                    num_specified=get_negint_represent(num_specified, IMM_MODULUS[converted_instruction[address]["instruction_type"]])
-                    num_specified_alternative = ~(-num_specified) % (##漏掉了负号，应该先得到绝对值，再来一波bit manipulation
-                    1 << IMM_MODULUS[converted_instruction[address]["instruction_type"]])+1
-                    assert num_specified==num_specified_alternative
+                    num_specified = get_negint_represent(num_specified, IMM_MODULUS[
+                        converted_instruction[address]["instruction_type"]])
+                    num_specified_alternative = ~(-num_specified) % (  ##漏掉了负号，应该先得到绝对值，再来一波bit manipulation
+                        1 << IMM_MODULUS[converted_instruction[address]["instruction_type"]]) + 1
+                    assert num_specified == num_specified_alternative
                 machine_code += num_specified << param_offset
             elif param_type == "register":
                 machine_code += decode_register(clean_code[i + param + 1]) << param_offset
             elif param_type == "SL_register":
-                reg_no, imm = decode_sl_register(clean_code[i+param+1])
-                machine_code+=reg_no<<param_offset[0]
-                machine_code+=imm<<param_offset[1]
+                reg_no, imm = decode_sl_register(clean_code[i + param + 1])
+                machine_code += reg_no << param_offset[0]
+                machine_code += imm << param_offset[1]
             elif param_type == "relocate":
                 converted_instruction[address]["relocate"] = clean_code[i + param + 1]
                 text_address_relocate.append(address)
@@ -282,22 +287,25 @@ def convert_assembly(clean_code):
 
     # 对跳转指令进行重定向，注意不同指令的差异：
     # B开头的是[17:2]位，jr,jal也是，TODO:似乎都是？
-    for text_address in text_address_relocate:##这一步一开始直接跳过了，原因在第一次循环时没有向这个数组加入东西
-        destination = tag_address[converted_instruction[text_address]["relocate"]]##写成了address
-        converted_instruction[text_address]["relocate"] = destination
-        # 对重定向的地址的机器码加上地址（立即数部分）：
-        ##没有考虑B指令应该是跳转地址和PC+4的差，并注意还是需要处理负偏移
-        if converted_instruction[text_address]["instruction_type"] == "I":#分支指令
-            machine_code_offset=((destination-text_address-4)>>2)%(1<<16)
-            if machine_code_offset<0:
-                machine_code_offset=get_negint_represent(machine_code_offset, 16)
-            assert IMM_MODULUS[converted_instruction[text_address]["instruction_type"]] == 16
-        else:#跳转指令
-            machine_code_offset = (destination >> 2) % (1 << 26)  ##写成了直接对IMM_MODULUS取模，但1<<后者才是真正的模值
-            assert IMM_MODULUS[converted_instruction[text_address]["instruction_type"]]==26
-        assert BJ_MODULUS[converted_instruction[text_address]["instruction"]] == IMM_MODULUS[
-            converted_instruction[text_address]["instruction_type"]]  # TODO：去除BJ_MODUUS,条件是，立即数只有J是26位，其它全部16位
-        converted_instruction[text_address]["machine_code"] += machine_code_offset << 0
+    for text_address in text_address_relocate:  ##这一步一开始直接跳过了，原因在第一次循环时没有向这个数组加入东西
+        if not reverse:
+            destination = tag_address[converted_instruction[text_address]["relocate"]]  ##写成了address
+            converted_instruction[text_address]["relocate"] = destination
+            # 对重定向的地址的机器码加上地址（立即数部分）：
+            ##没有考虑B指令应该是跳转地址和PC+4的差，并注意还是需要处理负偏移
+            if converted_instruction[text_address]["instruction_type"] == "I":  # 分支指令
+                machine_code_offset = ((destination - text_address - 4) >> 2) % (1 << 16)
+                if machine_code_offset < 0:
+                    machine_code_offset = get_negint_represent(machine_code_offset, 16)
+                assert IMM_MODULUS[converted_instruction[text_address]["instruction_type"]] == 16
+            else:  # 跳转指令
+                machine_code_offset = (destination >> 2) % (1 << 26)  ##写成了直接对IMM_MODULUS取模，但1<<后者才是真正的模值
+                assert IMM_MODULUS[converted_instruction[text_address]["instruction_type"]] == 26
+            assert BJ_MODULUS[converted_instruction[text_address]["instruction"]] == IMM_MODULUS[
+                converted_instruction[text_address]["instruction_type"]]  # TODO：去除BJ_MODUUS,条件是，立即数只有J是26位，其它全部16位
+            converted_instruction[text_address]["machine_code"] += machine_code_offset << 0
+        else:#全是立即数
+            converted_instruction[text_address]["machine_code"]+=int(converted_instruction[text_address]["relocate"],16)
     return converted_instruction
 
 
@@ -310,13 +318,17 @@ def nice_print(converted_instruction):
 
 
 if __name__ == "__main__":
-    #import os
+    # import os
 
     # for folder_name in os.walk("test"):
     #     for filename in folder_name[2]:
     #         clean_code=read_clean_code("test/"+filename)
     #         pass
-    clean_code = read_clean_code("8queen.asm")
-    converted_instruction = convert_assembly(clean_code)
+    #clean_code = read_clean_code("rom.asm")
+    converted_instruction=convert_assembly(["sw","$17", "0x0003($16)","lw","$17", "0x0003($16)"],False)
     nice_print_string = nice_print(converted_instruction)
+    #converted_instruction = convert_assembly(clean_code,True)
+    #nice_print_string = nice_print(converted_instruction)
+    #with open("rom.out",'w') as fd:
+    #    fd.write(nice_print_string)
     pass
