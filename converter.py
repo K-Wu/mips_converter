@@ -146,7 +146,7 @@ def get_instruction_type(instruction):
         param_offsets_pair = [(R_INSTRUCTIONS[instruction][i], R_TYPES[i], R_OFFSETS[i]) for i in
                               range(1, len(R_OFFSETS)) if R_INSTRUCTIONS[instruction][i] != -1]
         return param_number, param_offsets_pair, (R_INSTRUCTIONS[instruction][0], FUNC_OFFSET), "R"
-    raise ValueError, "instruction " + instruction + " is unknown and cannot give param,constant information correctly"
+    raise ValueError("instruction " + instruction + " is unknown and cannot give param,constant information correctly")
 
 
 def decode_sl_register(reg_str):
@@ -289,7 +289,7 @@ def convert_assembly(clean_code,reverse=False):
                 converted_instruction[address]["relocate_type"] = clean_code[i]  # TODO:remove this and following line
                 assert converted_instruction[address]["relocate_type"] == converted_instruction[address]["instruction"]
             else:
-                raise ValueError, "unexpected param_type"
+                raise ValueError("unexpected param_type")
         converted_instruction[address]["machine_code"] = machine_code
         i += param_number  # 寄存器/立即数
         # 解析下一条指令
