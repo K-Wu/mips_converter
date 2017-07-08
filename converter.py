@@ -159,10 +159,18 @@ def decode_sl_register(reg_str):
     # 有三种可能：只有立即数（没有括号），只有寄存器（有括号），又有立即数又有寄存器（有括号）。虽然第一种只在MARS中看到过
     left_par_pos = reg_str.find("(")
     if left_par_pos == -1:
-        return 0, int(reg_str,16)
+        try:
+            _immediate=int(reg_str)
+        except Exception:
+            _immediate=int(reg_str,16)
+        return 0, _immediate
     if left_par_pos == 0:
         return decode_register(reg_str), 0
-    return decode_register(reg_str[left_par_pos + 1:-1]), int(reg_str[0:left_par_pos],16)
+    try:
+        _immediate = int(reg_str[0:left_par_pos])
+    except Exception:
+        _immediate = int(reg_str[0:left_par_pos],16)
+    return decode_register(reg_str[left_par_pos + 1:-1]), _immediate#默认十进制
 
 
 def decode_register(reg_str):
@@ -221,7 +229,7 @@ def get_negint_represent(number, num_bits):
     ##refactor的时候漏掉了+1
 
 
-TEXT_ADDRESS_START_POSITION = 0x00000000
+TEXT_ADDRESS_START_POSITION = 0x00000000 #指令地址开始位置
 
 
 def convert_assembly(clean_code,reverse=False):
@@ -255,7 +263,10 @@ def convert_assembly(clean_code,reverse=False):
         machine_code = constant << constant_offset
         for param, param_type, param_offset in param_types_offsets:
             if param_type == "immediate" or param_type == "shamt":  ##写成param_type=="immediate" or "shamt"是不行的
-                num_specified = int(clean_code[i + param + 1],16) #默认16位
+                try:
+                    num_specified = int(clean_code[i + param + 1]) #默认十进制，和其他的都不同
+                except Exception:
+                    num_specified = int(clean_code[i + param + 1],16)
                 ##第一次写漏写了立即数取反
 
                 if num_specified < 0:
@@ -316,6 +327,12 @@ def nice_print(converted_instruction):
         string += "\n"
     return string
 
+def print_rom(converted_instruction):
+    string=""
+    for ind,address in enumerate(sorted(converted_instruction.keys())):
+        string += "ROMDATA[{}] <= 32'h{:08x};".format(ind,converted_instruction[address]["machine_code"])
+        string += "\n"
+    return string
 
 if __name__ == "__main__":
     # import os
@@ -325,8 +342,14 @@ if __name__ == "__main__":
     #         clean_code=read_clean_code("test/"+filename)
     #         pass
     #clean_code = read_clean_code("rom.asm")
-    converted_instruction=convert_assembly(["sw","$17", "0x0003($16)","lw","$17", "0x0003($16)"],False)
-    nice_print_string = nice_print(converted_instruction)
+    #converted_instruction=convert_assembly(["sw","$17", "0x0003($16)","lw","$17", "0x0003($16)"],False)
+    #nice_print_string = nice_print(converted_instruction)
+    clean_code = read_clean_code("Geng_xiang_jian_sun_shu.asm")
+    converted_instruction = convert_assembly(clean_code)
+    str = print_rom(converted_instruction)
+    with open("Geng_xiang_jian_sun_shu.out",'w') as fd:
+        fd.write(str)
+
     #converted_instruction = convert_assembly(clean_code,True)
     #nice_print_string = nice_print(converted_instruction)
     #with open("rom.out",'w') as fd:
