@@ -248,7 +248,8 @@ def convert_assembly(clean_code,reverse=False):
     text_address_relocate = []  # 记录了需要重定向的指令的地址
     address = TEXT_ADDRESS_START_POSITION
     while (i < len(clean_code) - 1):
-        converted_instruction[address] = {}
+        if not converted_instruction.get(address):
+            converted_instruction[address] = {}##有标签时这条指令会使标签消失
         # 遇到了一个标签
         if clean_code[i].find(":") != -1:
             converted_instruction[address]["tag"] = clean_code[i][0:-1]
@@ -257,11 +258,14 @@ def convert_assembly(clean_code,reverse=False):
             continue
         # 遇到了一个指令
         converted_instruction[address]["instruction"] = clean_code[i]
+
         param_number, param_types_offsets, (constant, constant_offset), instruction_type = get_instruction_type(
                 clean_code[i])
+        converted_instruction[address]["origin_line_list"] = [clean_code[i]] + ["Not parsed"]*param_number
         converted_instruction[address]["instruction_type"] = instruction_type
         machine_code = constant << constant_offset
         for param, param_type, param_offset in param_types_offsets:
+            converted_instruction[address]["origin_line_list"][param+1]=clean_code[i+param+1]
             if param_type == "immediate" or param_type == "shamt":  ##写成param_type=="immediate" or "shamt"是不行的
                 try:
                     num_specified = int(clean_code[i + param + 1]) #默认十进制，和其他的都不同
@@ -331,6 +335,10 @@ def print_rom(converted_instruction):
     string=""
     for ind,address in enumerate(sorted(converted_instruction.keys())):
         string += "ROMDATA[{}] <= 32'h{:08x};".format(ind,converted_instruction[address]["machine_code"])
+        string += "//"
+        if converted_instruction[address].get("tag"):
+            string+=converted_instruction[address].get("tag")+": "
+        string += " ".join(converted_instruction[address]["origin_line_list"])
         string += "\n"
     return string
 
@@ -344,10 +352,10 @@ if __name__ == "__main__":
     #clean_code = read_clean_code("rom.asm")
     #converted_instruction=convert_assembly(["sw","$17", "0x0003($16)","lw","$17", "0x0003($16)"],False)
     #nice_print_string = nice_print(converted_instruction)
-    clean_code = read_clean_code("Geng_xiang_jian_sun_shu.asm")
+    clean_code = read_clean_code("rom_test2_pipeline.asm")
     converted_instruction = convert_assembly(clean_code)
     str = print_rom(converted_instruction)
-    with open("Geng_xiang_jian_sun_shu.out",'w') as fd:
+    with open("rom_test2_pipeline.out",'w') as fd:
         fd.write(str)
 
     #converted_instruction = convert_assembly(clean_code,True)
